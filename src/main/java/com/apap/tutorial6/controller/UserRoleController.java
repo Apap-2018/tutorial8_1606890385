@@ -43,26 +43,35 @@ public class UserRoleController {
 		return "update-password";
 	}
 	
-	@RequestMapping(value = "/updatePass", method = RequestMethod.POST)
-	private String updatePassSubmit(@ModelAttribute PasswordModel pass, Model model) {
+	@RequestMapping(value="/passwordSubmit",method=RequestMethod.POST)
+	public ModelAndView updatePasswordSubmit(@ModelAttribute PasswordModel pass, Model model,RedirectAttributes redir) {
 		BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 		UserRoleModel user = userService.findUserByUsername(SecurityContextHolder.getContext().getAuthentication().getName());
 		String message = "";
-		if (pass.getConfirmedPassword().equals(pass.getNewPassword())) {
+	    String pattern = "(?=.*[0-9])(?=.*[a-zA-Z]).{8,}";
+		if (pass.getConPassword().equals(pass.getNewPassword())) {
 			
 			if (passwordEncoder.matches(pass.getOldPassword(), user.getPassword())) {
-				message = "Success";
-				userService.changePassword(user, pass.getNewPassword());
+				if(pass.getNewPassword().matches(pattern)) {
+					userService.changePassword(user, pass.getNewPassword());
+					message = "password berhasil diubah";
+				}
+				else {
+					message = "password anda harus mengandung angka, huruf, dan memiliki setidaknya 8 karakter ";
+				}
 			}
 			else {
-				message = "NotMatch";
+				message = "password lama anda salah";
 			}
 			
 		}
 		else {
-			message = "Failed";
+			message = "password baru tidak sesuai";
 		}
-		model.addAttribute("message" , message);
-		return "update-password";
+		
+		
+		ModelAndView modelAndView = new ModelAndView("redirect:/user/updatePass");
+		redir.addFlashAttribute("msg",message);
+		return modelAndView;
 	}
 }
